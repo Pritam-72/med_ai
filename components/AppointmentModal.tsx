@@ -274,12 +274,6 @@ const AppointmentModal: React.FC<AppointmentModalProps> = ({
                                         </div>
                                     )}
 
-                                    {/* Consult Type */}
-                                    <ConsultTypeSelector
-                                        selected={form.consultType}
-                                        onChange={ct => setForm(f => ({ ...f, consultType: ct }))}
-                                    />
-
                                     {/* Symptoms (optional) */}
                                     <div>
                                         <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1">Symptoms (optional)</label>
@@ -295,6 +289,12 @@ const AppointmentModal: React.FC<AppointmentModalProps> = ({
                                             className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-500 resize-none h-16"
                                             placeholder="Additional information..." />
                                     </div>
+
+                                    {/* Consult Type — moved below symptoms & notes */}
+                                    <ConsultTypeSelector
+                                        selected={form.consultType}
+                                        onChange={ct => setForm(f => ({ ...f, consultType: ct }))}
+                                    />
 
                                     {/* Submit or Waitlist */}
                                     {capacityInfo?.isFull ? (
