@@ -302,17 +302,18 @@ const App: React.FC = () => {
             />
 
             <ToolActivity activities={toolActivities} />
+
+            <DoctorAvailability
+              onSelectSlot={(_doctor, specialty, time) => {
+                setShowAppointments(true);
+              }}
+            />
           </div>
 
           {/* Right Column */}
           <div className="space-y-6">
             <TranscriptionView entries={transcriptions} />
             <FollowUpMonitor appointments={appointments} patientName={userProfile.name} />
-            <DoctorAvailability
-              onSelectSlot={(_doctor, specialty, time) => {
-                setShowAppointments(true);
-              }}
-            />
           </div>
         </div>
       </main>
