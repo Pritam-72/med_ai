@@ -197,15 +197,15 @@ const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({ onSelectSlot, c
                     <button
                         key={d.iso}
                         onClick={() => setViewDate(d.iso)}
-                        className={`flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-2xl border text-center transition-all shrink-0 min-w-[56px] ${viewDate === d.iso
+                        className={`flex flex-col items-center justify-center w-16 h-16 rounded-2xl border text-center transition-all shrink-0 ${viewDate === d.iso
                                 ? 'bg-cyan-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/30'
                                 : d.isWeekend
                                     ? 'border-slate-800 text-slate-600 bg-slate-800/30'
                                     : 'border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200 bg-slate-800/20'
                             }`}
                     >
-                        <span className="text-[9px] font-bold tracking-wider">{d.label}</span>
-                        <span className="text-xl font-black leading-none">{d.day}</span>
+                        <span className="text-[9px] font-bold tracking-wider leading-none mb-1">{d.label}</span>
+                        <span className="text-lg font-black leading-none">{d.day}</span>
                     </button>
                 ))}
             </div>
@@ -300,10 +300,10 @@ const DoctorAvailability: React.FC<DoctorAvailabilityProps> = ({ onSelectSlot, c
                                                             );
                                                         }}
                                                         className={`px-1 py-1.5 rounded-xl text-[11px] font-semibold text-center transition-all duration-150 border ${slot.booked
-                                                                ? 'bg-slate-800/60 text-slate-600 border-transparent cursor-not-allowed line-through'
-                                                                : isPending
-                                                                    ? 'bg-cyan-500 text-white border-cyan-400 shadow-md shadow-cyan-500/30 scale-105'
-                                                                    : 'bg-slate-800 hover:bg-slate-700 border-slate-600 hover:border-cyan-500/60 text-slate-300 hover:text-cyan-300 cursor-pointer'
+                                                            ? 'bg-slate-800/60 text-slate-600 border-transparent cursor-not-allowed line-through'
+                                                            : isPending
+                                                                ? 'bg-cyan-500 text-white border-cyan-400 shadow-md shadow-cyan-500/30 scale-105'
+                                                                : 'bg-slate-800 hover:bg-slate-700 border-slate-600 hover:border-cyan-500/60 text-slate-300 hover:text-cyan-300 cursor-pointer'
                                                             }`}
                                                     >
                                                         {slot.time.replace(' AM', 'a').replace(' PM', 'p')}
