@@ -14,6 +14,7 @@ import AppointmentModal from './components/AppointmentModal';
 import SeverityBanner from './components/SeverityBanner';
 import FollowUpMonitor from './components/FollowUpMonitor';
 import LoadDashboard from './components/LoadDashboard';
+import DoctorAvailability from './components/DoctorAvailability';
 import { DEFAULT_VOICE_ID } from './services/elevenlabs';
 import { Appointment } from './types';
 import { classifySeverityFromText } from './services/severity';
@@ -307,6 +308,11 @@ const App: React.FC = () => {
           <div className="space-y-6">
             <TranscriptionView entries={transcriptions} />
             <FollowUpMonitor appointments={appointments} patientName={userProfile.name} />
+            <DoctorAvailability
+              onSelectSlot={(_doctor, specialty, time) => {
+                setShowAppointments(true);
+              }}
+            />
           </div>
         </div>
       </main>

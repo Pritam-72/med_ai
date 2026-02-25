@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Appointment, ConsultType, WaitlistEntry } from '../types';
 import ConsultTypeSelector from './ConsultTypeSelector';
-import { canBook, incrementBooking, decrementBooking, getCapacityInfo, getNextAvailableDate, addToWaitlist, getWaitlist, removeFromWaitlist, getWaitlistPosition } from '../services/capacity';
+import DoctorAvailability from './DoctorAvailability';
+import { canBook, incrementBooking, decrementBooking, getCapacityInfo, getNextAvailableDate, addToWaitlist, getWaitlist, removeFromWaitlist } from '../services/capacity';
 import { classifySeverity } from '../services/severity';
 
 interface AppointmentModalProps {
@@ -28,7 +29,7 @@ const TIME_SLOTS = [
 const AppointmentModal: React.FC<AppointmentModalProps> = ({
     isOpen, appointments, onBook, onCancel, onClose, patientName,
 }) => {
-    const [tab, setTab] = useState<'upcoming' | 'book' | 'waitlist'>('upcoming');
+    const [tab, setTab] = useState<'availability' | 'upcoming' | 'book' | 'waitlist'>('availability');
     const [form, setForm] = useState({
         patientName: patientName || '',
         doctorSpecialty: SPECIALTIES[0],
@@ -132,20 +133,39 @@ const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-slate-700/50 shrink-0">
-                    {(['upcoming', 'book', 'waitlist'] as const).map(t => (
+                <div className="flex border-b border-slate-700/50 shrink-0 overflow-x-auto">
+                    {([
+                        { key: 'availability', label: '🏥 Availability' },
+                        { key: 'upcoming', label: `📅 Upcoming (${upcoming.length})` },
+                        { key: 'book', label: '➕ Book' },
+                        { key: 'waitlist', label: `📋 Waitlist (${waitlist.length})` },
+                    ] as const).map(({ key, label }) => (
                         <button
-                            key={t}
-                            onClick={() => setTab(t)}
-                            className={`flex-1 py-2.5 text-sm font-medium transition-colors capitalize ${tab === t ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-400 hover:text-slate-200'}`}
+                            key={key}
+                            onClick={() => setTab(key)}
+                            className={`shrink-0 px-3 py-2.5 text-xs font-semibold transition-colors whitespace-nowrap ${tab === key ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-400 hover:text-slate-200'}`}
                         >
-                            {t === 'upcoming' ? `Upcoming (${upcoming.length})` : t === 'waitlist' ? `Waitlist (${waitlist.length})` : 'Book'}
+                            {label}
                         </button>
                     ))}
                 </div>
 
-                <div className="overflow-y-auto flex-1 p-5">
-                    {/* ── UPCOMING ── */}
+                <div className="overflow-y-auto flex-1 p-4">
+                    {/* ── AVAILABILITY ── */}
+                    {tab === 'availability' && (
+                        <DoctorAvailability
+                            selectedSpecialty={form.doctorSpecialty}
+                            selectedDate={form.preferredDate}
+                            onSelectSlot={(doctor, specialty, time) => {
+                                setForm(f => ({
+                                    ...f,
+                                    doctorSpecialty: specialty,
+                                    preferredTime: time,
+                                }));
+                                setTab('book');
+                            }}
+                        />
+                    )}
                     {tab === 'upcoming' && (
                         <div className="space-y-3">
                             {upcoming.length === 0 && past.length === 0 && (
