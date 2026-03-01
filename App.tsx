@@ -195,7 +195,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-mesh-light dark:bg-mesh-dark selection:bg-blue-500/30">
       <Header
         darkMode={darkMode}
         onToggleDarkMode={() => setDarkMode(d => !d)}
@@ -206,7 +206,7 @@ const App: React.FC = () => {
         onOpenAppointments={() => setShowAppointments(true)}
       />
 
-      <main className="flex-1 container mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 container mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
@@ -233,18 +233,36 @@ const App: React.FC = () => {
             />
 
             {/* AI Severity Checker Card */}
-            <div className="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🩺</span>
-                <h3 className="font-semibold text-slate-100">AI Symptom Checker</h3>
-                <span className="text-xs text-slate-400 bg-slate-700 px-2 py-0.5 rounded-full ml-auto">Instant Severity Assessment</span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  value={symptomInput}
-                  onChange={e => setSymptomInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && symptomInput.trim()) {
+            <div className="glass-panel rounded-2xl p-6 space-y-4 transition-all duration-300 hover:shadow-lg relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 pointer-events-none"></div>
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🩺</span>
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Symptom Checker</h3>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg ml-auto">Instant Assessment</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={symptomInput}
+                    onChange={e => setSymptomInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && symptomInput.trim()) {
+                        const rf = checkRedFlags(symptomInput);
+                        if (rf.triggered) {
+                          setRedFlagAlert(rf.emergencyMessage);
+                          setSeverityResult(null);
+                        } else {
+                          setSeverityResult(classifySeverityFromText(symptomInput));
+                          setRedFlagAlert(null);
+                        }
+                      }
+                    }}
+                    placeholder="Describe your symptoms..."
+                    className="flex-1 bg-white/60 dark:bg-gray-900/60 backdrop-blur-md border border-gray-200/80 dark:border-gray-700/80 rounded-xl px-4 py-3 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 shadow-sm transition-all"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!symptomInput.trim()) return;
                       const rf = checkRedFlags(symptomInput);
                       if (rf.triggered) {
                         setRedFlagAlert(rf.emergencyMessage);
@@ -253,46 +271,31 @@ const App: React.FC = () => {
                         setSeverityResult(classifySeverityFromText(symptomInput));
                         setRedFlagAlert(null);
                       }
-                    }
-                  }}
-                  placeholder="Describe your symptoms (e.g. chest pain, fever...)"
-                  className="flex-1 bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-                />
-                <button
-                  onClick={() => {
-                    if (!symptomInput.trim()) return;
-                    const rf = checkRedFlags(symptomInput);
-                    if (rf.triggered) {
-                      setRedFlagAlert(rf.emergencyMessage);
-                      setSeverityResult(null);
-                    } else {
-                      setSeverityResult(classifySeverityFromText(symptomInput));
-                      setRedFlagAlert(null);
-                    }
-                  }}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold rounded-xl transition-colors"
-                >
-                  Check
-                </button>
-              </div>
-              {redFlagAlert && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl p-3 text-sm">
-                  {redFlagAlert}
-                  <div className="mt-2 flex gap-2">
-                    <a href="tel:112" className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg">📞 Call 112</a>
-                    <button onClick={() => setRedFlagAlert(null)} className="text-xs text-red-300 underline">Dismiss</button>
-                  </div>
+                    }}
+                    className="px-5 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                  >
+                    Check
+                  </button>
                 </div>
-              )}
-              {severityResult && (
-                <SeverityBanner
-                  result={severityResult}
-                  symptoms={[symptomInput]}
-                  onBookAppointment={() => setShowAppointments(true)}
-                  onEmergency={() => setRedFlagAlert('🚨 Please call emergency services: 112 (India) / 911 (US)')}
-                  onDismiss={() => setSeverityResult(null)}
-                />
-              )}
+                {redFlagAlert && (
+                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl p-3 text-sm">
+                    {redFlagAlert}
+                    <div className="mt-2 flex gap-2">
+                      <a href="tel:112" className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg">📞 Call 112</a>
+                      <button onClick={() => setRedFlagAlert(null)} className="text-xs text-red-400 hover:text-red-500 underline">Dismiss</button>
+                    </div>
+                  </div>
+                )}
+                {severityResult && (
+                  <SeverityBanner
+                    result={severityResult}
+                    symptoms={[symptomInput]}
+                    onBookAppointment={() => setShowAppointments(true)}
+                    onEmergency={() => setRedFlagAlert('🚨 Please call emergency services: 112 (India) / 911 (US)')}
+                    onDismiss={() => setSeverityResult(null)}
+                  />
+                )}
+              </div>
             </div>
 
             <VoiceSelector
@@ -323,20 +326,20 @@ const App: React.FC = () => {
 
       {/* Error Toast */}
       {error && (
-        <div className="fixed bottom-6 right-6 z-40 bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-xl shadow-lg max-w-sm no-print">
+        <div className="fixed bottom-6 right-6 z-40 bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 px-5 py-3 rounded-xl shadow-sm max-w-sm no-print">
           <div className="flex items-start space-x-3">
             <div className="flex-1">
-              <p className="font-bold text-sm">Error Occurred</p>
-              <p className="text-xs mt-0.5">{error}</p>
+              <p className="font-medium text-sm">Error</p>
+              <p className="text-xs mt-0.5 text-red-500 dark:text-red-400">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 text-sm font-medium">Dismiss</button>
+            <button onClick={() => setError(null)} className="text-red-300 hover:text-red-500 text-sm font-medium">✕</button>
           </div>
         </div>
       )}
 
       {/* Footer */}
-      <footer className="bg-white border-t py-4 text-center text-slate-500 text-sm no-print">
-        <p>&copy; 2025 med_ai. For demonstration purposes only. Always consult a professional for medical emergencies.</p>
+      <footer className="bg-white/50 dark:bg-gray-950/50 border-t border-gray-100 dark:border-gray-800 py-4 text-center text-gray-400 dark:text-gray-500 text-xs no-print">
+        <p>&copy; 2025 med_ai · For demonstration only. Always consult a healthcare professional.</p>
       </footer>
 
       {/* LoadDashboard Modal */}
@@ -379,7 +382,7 @@ const App: React.FC = () => {
       {/* Load Dashboard floating trigger */}
       <button
         onClick={() => setShowLoadDashboard(true)}
-        className="fixed bottom-6 left-6 z-30 flex items-center gap-2 bg-slate-800 border border-slate-600 hover:border-cyan-500 text-slate-300 hover:text-cyan-400 px-3 py-2 rounded-xl text-xs font-medium transition-all shadow-lg no-print"
+        className="fixed bottom-6 left-6 z-30 flex items-center gap-2 glass-panel hover:bg-white/90 dark:hover:bg-gray-800/90 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-3 rounded-2xl text-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300 no-print"
         title="Predictive Load Dashboard"
       >
         📊 Load Dashboard

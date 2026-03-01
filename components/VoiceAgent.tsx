@@ -122,7 +122,6 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
     }
   };
 
-  // Flush accumulated text to ElevenLabs TTS
   const flushTextToTTS = async () => {
     const text = pendingTextRef.current.trim();
     if (!text || !ttsRef.current) return;
@@ -131,7 +130,6 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
       await ttsRef.current.speak(text);
     } catch (err: any) {
       console.error('TTS error:', err);
-      // Don't crash the session on TTS errors — just log
     }
   };
 
@@ -141,13 +139,11 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
         try {
           const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
-          // Input audio context (mic, 16kHz)
           audioContextInRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: INPUT_SAMPLE_RATE });
           if (audioContextInRef.current.state === 'suspended') {
             await audioContextInRef.current.resume();
           }
 
-          // Output audio context (Gemini native audio, 24kHz)
           audioContextOutRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
           if (audioContextOutRef.current.state === 'suspended') {
             await audioContextOutRef.current.resume();
@@ -155,14 +151,12 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
 
           streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-          // Analyser for waveform visualization
           const analyser = audioContextInRef.current.createAnalyser();
           analyser.fftSize = 256;
           setAnalyserNode(analyser);
 
           const systemInstruction = getSystemInstruction(language, userProfile);
 
-          // PCM audio buffer queue for smooth playback
           let nextPlayTime = 0;
 
           const playPCM = (base64Data: string) => {
@@ -222,7 +216,6 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
               },
 
               onmessage: async (message: LiveServerMessage) => {
-                // Play audio output from Gemini
                 const audioParts = message.serverContent?.modelTurn?.parts?.filter(p => p.inlineData?.mimeType?.startsWith('audio/'));
                 if (audioParts?.length) {
                   for (const part of audioParts) {
@@ -232,15 +225,13 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
                   }
                 }
 
-                // Collect text parts (may appear alongside audio)
                 const textPart = message.serverContent?.modelTurn?.parts?.find(p => p.text);
                 if (textPart?.text) {
                   pendingTextRef.current += textPart.text;
                 }
 
-                // Turn complete — save transcript
                 if (message.serverContent?.turnComplete) {
-                  nextPlayTime = 0; // Reset audio queue
+                  nextPlayTime = 0;
                   if (currentInputTranscription.current) {
                     onTranscription('user', currentInputTranscription.current);
                     currentInputTranscription.current = '';
@@ -251,17 +242,14 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
                   }
                 }
 
-                // STT transcript from user audio
                 if (message.serverContent?.inputTranscription?.text) {
                   currentInputTranscription.current += message.serverContent.inputTranscription.text;
                 }
 
-                // Output transcript (Gemini's own speech transcript)
                 if (message.serverContent?.outputTranscription?.text) {
                   pendingTextRef.current += message.serverContent.outputTranscription.text;
                 }
 
-                // Tool handling
                 if (message.toolCall) {
                   for (const fc of message.toolCall.functionCalls) {
                     onToolCall({ id: fc.id, name: fc.name, args: fc.args });
@@ -282,7 +270,6 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
                   }
                 }
 
-                // If interrupted, reset audio queue
                 if (message.serverContent?.interrupted) {
                   nextPlayTime = 0;
                   pendingTextRef.current = '';
@@ -335,82 +322,84 @@ const VoiceAgent: React.FC<VoiceAgentProps> = ({
   const hasElevenLabsKey = elevenLabsApiKey && elevenLabsApiKey !== 'your_elevenlabs_api_key_here';
 
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center space-y-6">
-      <div className="relative">
-        <div className={`w-40 h-40 rounded-full flex items-center justify-center transition-all duration-500 shadow-inner ${status === SessionStatus.ACTIVE ? 'bg-blue-50' : 'bg-slate-50'
-          }`}>
-          <AudioVisualizer active={status === SessionStatus.ACTIVE} analyserNode={analyserNode} />
-          <div className={`absolute inset-0 rounded-full border-4 transition-all duration-700 ${status === SessionStatus.ACTIVE ? 'border-blue-200 animate-pulse' : 'border-slate-100'
-            }`}></div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-slate-800">
-          {status === SessionStatus.IDLE && 'Ready to Help'}
-          {status === SessionStatus.CONNECTING && 'Establishing Secure Connection...'}
-          {status === SessionStatus.ACTIVE && "I'm Listening..."}
-        </h2>
-        <p className="text-slate-500 max-w-sm mx-auto text-sm">
-          {status === SessionStatus.IDLE && 'Click start to speak with your personal healthcare assistant.'}
-          {status === SessionStatus.ACTIVE && 'Ask about symptoms, medications, find clinics, or book an appointment.'}
-        </p>
-
-        {/* ElevenLabs status indicator */}
-        {status === SessionStatus.IDLE && (
-          <div className={`inline-flex items-center space-x-1.5 text-xs px-3 py-1 rounded-full mt-1 ${hasElevenLabsKey
-            ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
-            : 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+    <div className="glass-panel rounded-3xl p-10 flex flex-col items-center justify-center text-center space-y-8 relative overflow-hidden group">
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent dark:from-blue-900/10 dark:to-transparent pointer-events-none"></div>
+      <div className="relative z-10 w-full flex flex-col items-center space-y-6">
+        <div className="relative">
+          <div className={`w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 shadow-xl relative z-20 ${status === SessionStatus.ACTIVE ? 'bg-gradient-to-tr from-blue-100/80 to-purple-100/80 dark:from-blue-900/40 dark:to-purple-900/40' : 'bg-gray-50 dark:bg-gray-800/80'
             }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${hasElevenLabsKey ? 'bg-purple-500' : 'bg-amber-500'}`}></span>
-            <span>{hasElevenLabsKey ? 'ElevenLabs TTS Active' : 'ElevenLabs API key not set — add to .env.local'}</span>
+            <AudioVisualizer active={status === SessionStatus.ACTIVE} analyserNode={analyserNode} />
+            <div className={`absolute inset-0 rounded-full border-2 transition-all duration-700 z-10 ${status === SessionStatus.ACTIVE ? 'border-blue-400/50 dark:border-blue-500/50 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]' : 'border-gray-200 dark:border-gray-700'
+              }`}></div>
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="pt-4 w-full flex justify-center">
-        {status === SessionStatus.IDLE ? (
-          <button
-            onClick={onStart}
-            className="group flex items-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-blue-200 transition-all transform hover:scale-105 active:scale-95"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-            </svg>
-            <span>Start Conversation</span>
-          </button>
-        ) : (
-          <button
-            onClick={stopAudio}
-            className="flex items-center space-x-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-8 py-4 rounded-full font-bold transition-all"
-          >
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
-            </svg>
-            <span>End Call</span>
-          </button>
-        )}
-      </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+            {status === SessionStatus.IDLE && 'Ready to Help'}
+            {status === SessionStatus.CONNECTING && 'Connecting...'}
+            {status === SessionStatus.ACTIVE && "I'm Listening..."}
+          </h2>
+          <p className="text-gray-400 dark:text-gray-500 max-w-sm mx-auto text-sm">
+            {status === SessionStatus.IDLE && 'Click start to speak with your healthcare assistant.'}
+            {status === SessionStatus.ACTIVE && 'Ask about symptoms, medications, find clinics, or book an appointment.'}
+          </p>
 
-      {status === SessionStatus.ACTIVE && (
-        <div className="flex items-center space-x-4 text-xs">
-          <div className="flex items-center space-x-1.5 text-slate-400 bg-slate-50 px-3 py-1 rounded-full">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-            </span>
-            <span>LIVE</span>
-          </div>
-          {hasElevenLabsKey && (
-            <div className="flex items-center space-x-1.5 text-purple-500 bg-purple-50 dark:bg-purple-900/20 px-3 py-1 rounded-full">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
-              </svg>
-              <span>ElevenLabs TTS</span>
+          {status === SessionStatus.IDLE && (
+            <div className={`inline-flex items-center space-x-1.5 text-xs px-3 py-1 rounded-full mt-1 ${hasElevenLabsKey
+              ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-500 dark:text-purple-400'
+              : 'bg-amber-50 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400'
+              }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${hasElevenLabsKey ? 'bg-purple-400' : 'bg-amber-400'}`}></span>
+              <span>{hasElevenLabsKey ? 'ElevenLabs TTS Active' : 'ElevenLabs API key not set'}</span>
             </div>
           )}
         </div>
-      )}
+
+        <div className="pt-2 w-full flex justify-center">
+          {status === SessionStatus.IDLE ? (
+            <button
+              onClick={onStart}
+              className="group flex items-center space-x-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-3.5 rounded-full font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+              </svg>
+              <span>Start Conversation</span>
+            </button>
+          ) : (
+            <button
+              onClick={stopAudio}
+              className="group flex items-center space-x-3 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 px-8 py-3.5 rounded-full font-semibold transition-all duration-300"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
+              </svg>
+              <span>End Call</span>
+            </button>
+          )}
+        </div>
+
+        {status === SessionStatus.ACTIVE && (
+          <div className="flex items-center space-x-3 text-xs">
+            <div className="flex items-center space-x-1.5 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <span>LIVE</span>
+            </div>
+            {hasElevenLabsKey && (
+              <div className="flex items-center space-x-1.5 text-purple-400 dark:text-purple-500 bg-purple-50 dark:bg-purple-950/20 px-3 py-1 rounded-full">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                </svg>
+                <span>ElevenLabs TTS</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

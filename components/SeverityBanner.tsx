@@ -17,47 +17,44 @@ const SeverityBanner: React.FC<SeverityBannerProps> = ({
     const tips = result.action === 'self_care' ? getSelfCareTips(symptoms) : [];
 
     const colorMap = {
-        mild: { border: 'border-green-500/40', bg: 'bg-green-500/10', text: 'text-green-400', btn: 'bg-green-500 hover:bg-green-600' },
-        moderate: { border: 'border-yellow-500/40', bg: 'bg-yellow-500/10', text: 'text-yellow-400', btn: 'bg-yellow-500 hover:bg-yellow-600' },
-        severe: { border: 'border-red-500/40', bg: 'bg-red-500/10', text: 'text-red-400', btn: 'bg-red-500 hover:bg-red-600' },
+        mild: { border: 'border-emerald-200 dark:border-emerald-800', bg: 'bg-emerald-50 dark:bg-emerald-950/20', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-400', btn: 'bg-emerald-500 hover:bg-emerald-600' },
+        moderate: { border: 'border-amber-200 dark:border-amber-800', bg: 'bg-amber-50 dark:bg-amber-950/20', text: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-400', btn: 'bg-amber-500 hover:bg-amber-600' },
+        severe: { border: 'border-red-200 dark:border-red-800', bg: 'bg-red-50 dark:bg-red-950/20', text: 'text-red-600 dark:text-red-400', bar: 'bg-red-500', btn: 'bg-red-500 hover:bg-red-600' },
     };
     const c = colorMap[result.level];
 
     return (
-        <div className={`rounded-2xl border ${c.border} ${c.bg} p-5 space-y-4 animate-in slide-in-from-top-2`}>
-            {/* Header */}
+        <div className={`rounded-2xl border ${c.border} ${c.bg} p-5 space-y-4`}>
             <div className="flex items-start justify-between">
                 <div>
-                    <div className={`text-xs font-bold uppercase tracking-wider ${c.text}`}>
-                        {result.level === 'mild' ? '✅ Mild Condition' : result.level === 'moderate' ? '⚠️ Moderate Condition' : '🚨 Severe — Emergency'}
+                    <div className={`text-xs font-semibold uppercase tracking-wider ${c.text}`}>
+                        {result.level === 'mild' ? '✅ Mild' : result.level === 'moderate' ? '⚠️ Moderate' : '🚨 Severe'}
                     </div>
-                    <p className="text-slate-200 text-sm mt-1">{result.message}</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm mt-1">{result.message}</p>
                 </div>
-                <button onClick={onDismiss} className="text-slate-400 hover:text-white ml-3 text-lg leading-none">×</button>
+                <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 ml-3 text-lg leading-none">×</button>
             </div>
 
-            {/* Severity Score Bar */}
             <div>
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                    <span>Severity Score</span>
+                <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mb-1">
+                    <span>Severity</span>
                     <span>{result.score}/10</span>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                     <div
-                        className={`h-2 rounded-full transition-all duration-700 ${result.level === 'mild' ? 'bg-green-500' : result.level === 'moderate' ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        className={`h-1.5 rounded-full transition-all duration-700 ${c.bar}`}
                         style={{ width: `${(result.score / 10) * 100}%` }}
                     />
                 </div>
             </div>
 
-            {/* Self-care tips for mild */}
             {result.action === 'self_care' && tips.length > 0 && (
                 <div>
-                    <div className="text-xs font-semibold text-green-400 mb-2">💊 Self-Care Tips</div>
+                    <div className="text-xs font-medium text-emerald-500 mb-2">💊 Self-Care Tips</div>
                     <ul className="space-y-1">
                         {tips.map((tip, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                                <span className="text-green-400 mt-0.5">•</span>
+                            <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                <span className="text-emerald-400 mt-0.5">•</span>
                                 {tip}
                             </li>
                         ))}
@@ -65,30 +62,20 @@ const SeverityBanner: React.FC<SeverityBannerProps> = ({
                 </div>
             )}
 
-            {/* Action buttons */}
             <div className="flex gap-2">
                 {result.action === 'emergency' && (
-                    <button
-                        onClick={onEmergency}
-                        className="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors"
-                    >
-                        📞 Call Emergency Services
+                    <button onClick={onEmergency} className="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">
+                        📞 Call Emergency
                     </button>
                 )}
                 {result.action === 'book_appointment' && (
-                    <button
-                        onClick={onBookAppointment}
-                        className="flex-1 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-semibold transition-colors"
-                    >
+                    <button onClick={onBookAppointment} className="flex-1 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors">
                         📅 Book Consultation
                     </button>
                 )}
                 {result.action === 'self_care' && (
-                    <button
-                        onClick={onDismiss}
-                        className="flex-1 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors"
-                    >
-                        Got it — I'll try these tips
+                    <button onClick={onDismiss} className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors">
+                        Got it
                     </button>
                 )}
             </div>
